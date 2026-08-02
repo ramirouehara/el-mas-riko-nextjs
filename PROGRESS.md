@@ -26,10 +26,9 @@ auth JWT+bcrypt).
 ## Roadmap
 
 1. **Setup del proyecto** ✅ DONE (2026-07-31)
-2. **Modelo de datos con Prisma** 🚧 EN CURSO (2026-08-01) — ver detalle en "Estado de la fase 2" abajo
-   - Instalar Prisma ✅, definir `schema.prisma` con las 6 tablas (ver esquema abajo) ⬅️ acá quedamos.
-   - Conectar a la MySQL de XAMPP (credenciales confirmadas: `root`, sin password, base `elmasrico`).
-3. Landing pública (Server Components, layout)
+2. **Modelo de datos con Prisma** ✅ DONE (2026-08-02) — ver detalle en "Estado de la fase 2" abajo
+3. **Landing pública (Server Components, layout)** 🚧 EN CURSO (2026-08-02) — ver "Estado de la fase 3"
+   abajo. ⬅️ ACÁ RETOMAR MAÑANA.
 4. Carta — productos agrupados por categoría, leídos directo desde Prisma (sin API intermedia)
 5. Formulario de pedido público — Client Component + Server Actions (reemplaza la cadena de 3 fetches con
    axios del original: crear cliente → crear pedido → agregar detalle)
@@ -50,6 +49,27 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
   sesión — para retomar: `npm run dev` desde la raíz del proyecto.
 - `npm audit`: 12 vulnerabilidades "high" en dependencias transitivas del scaffold — no bloqueante para
   desarrollo, revisar más adelante si hace falta.
+
+## Git / GitHub
+
+- Repo local con 4 commits al 2026-08-02: `a7dba7c` (initial de create-next-app), `0345b6c`/`af4af3b`
+  (schema de Prisma), `a6c5993` ("hicimos el nav").
+- Remoto configurado: `origin` → `https://github.com/ramirouehara/el-mas-riko-nextjs.git`. Ya está pusheado
+  y sincronizado (`git push` a secas alcanza, quedó el upstream seteado).
+- **Si en algún momento reaparece un error 403 al pushear** ("Permission ... denied to <usuario>"): ya pasó
+  una vez. Causa real: el usuario tiene una sola cuenta de GitHub (`ramirouehara`, logueada con Google, sin
+  password tradicional), pero el Keychain de macOS tenía cacheada una credencial vieja de OTRO usuario
+  (`uehararamiro`) para `github.com`. Fix que funcionó:
+  1. `printf "protocol=https\nhost=github.com\n" | git credential-osxkeychain erase` (borra la credencial
+     cacheada).
+  2. Generar un **Personal Access Token classic** en github.com/settings/tokens con el checkbox **`repo`**
+     tildado explícitamente (la primera vez se generó uno sin ese scope y dio el mismo 403 "denied to
+     ramirouehara" aun con el usuario correcto — un fine-grained token o uno sin scope `repo` da el mismo
+     síntoma).
+  3. `git push` de nuevo, usuario `ramirouehara`, contraseña = el token (no la contraseña real de la cuenta,
+     GitHub no la acepta para git por HTTPS desde 2021).
+- El usuario corre los comandos de git él mismo en su terminal en general (no Claude vía Bash), como parte
+  del aprendizaje.
 
 ## Estado de la fase 2 (Prisma) — al 2026-08-01
 
@@ -112,13 +132,81 @@ fase 3 (landing pública / primer uso de Prisma Client en una página).
 - **El generator es `prisma-client`** (no `prisma-client-js`) y genera el cliente en
   `src/generated/prisma`, dentro del código fuente, no escondido en `node_modules`.
 
-### Dónde retomar exactamente
+### Dónde retomar (fase 2, ya cerrada)
 
-Los 6 modelos están escritos, validados, verificados contra la base real y formateados en
-`prisma/schema.prisma` — fase 2 cerrada (ver detalle arriba). Falta: commitear el ajuste de
-`precioUnitario`, correr `npx prisma generate` para generar el Prisma Client en `src/generated/prisma`, y
-arrancar la fase 3 del roadmap (landing pública, primer uso real de Prisma Client en una página con Server
-Components).
+Los 6 modelos están escritos, validados, verificados contra la base real, formateados y commiteados/pusheados.
+`npx prisma generate` ya se corrió (Prisma Client existe en `src/generated/prisma`, gitignoreado). Fase 2
+100% cerrada. Sigue la fase 3, detallada abajo.
+
+## Estado de la fase 3 (Landing pública) — al 2026-08-02
+
+### Hecho
+
+- **`src/app/layout.tsx`**: se sacaron los fonts Geist default de create-next-app (import, consts, y su uso
+  en el `className` del `<html>`) — decisión: sin font custom por ahora, queda el `font-family: Arial,
+  Helvetica, sans-serif` que ya estaba en `globals.css` como fallback. `lang="es"`. `metadata` actualizada
+  (`title: "El Mas Riko"`, `description: "Pagina de El Mas Riko"`). `<Navbar />` importado y renderizado
+  dentro de `<body>`, antes de `{children}`.
+  - ⚠️ Pendiente menor: `globals.css` (bloque `@theme inline`) todavía tiene `--font-sans: var(--font-geist-sans)`
+    y `--font-mono: var(--font-geist-mono)` apuntando a variables que ya no se definen en ningún lado. No
+    rompe nada visualmente (el `body` tiene su propio `font-family` fijo), pero conviene limpiarlo o
+    reemplazarlo si en algún momento se agrega un font custom real.
+- **`src/components/Navbar.tsx`**: completo y funcionando. Logo (`<Image>` envuelta en `<Link href="/">`)
+  + `<ul>` con los 6 links del original (`Inicio /`, `Nosotros /#nosotros`, `Productos /#especialidades`,
+  `Carta /carta`, `Pedido /pedidos`, `Empleados /login` — las últimas 3 rutas todavía no existen, dan 404
+  a propósito por ahora). Con `flex items-center justify-between px-4 py-3` en el `<nav>` y
+  `flex items-center gap-3` en el `<ul>`. Server Component (sin `"use client"`, confirmado y entendido por
+  el usuario — no hay estado ni interactividad). Errores que cometió y corrigió en el camino: escribió
+  `<link>` (minúscula, tag nativo de HTML) en vez de `<Link>` (el componente importado de `next/link`) —
+  buen ejemplo real de la regla de JSX minúscula=HTML/mayúscula=variable en scope; typo `intems-center` en
+  vez de `items-center` (Tailwind no tira error en clases mal escritas, solo no aplica el estilo, silencioso).
+- **Assets copiados** a `public/img/`: `logo.png` (de `Frame 1.png` del proyecto original) y `sandwich.png`
+  (de `sandwich_sin_fondo 1.png`).
+- **`src/app/page.tsx`**: se vació el contenido default de create-next-app, quedó `return (<></>);` — un
+  fragment vacío. Ojo: el `import Image from "next/image";` de arriba quedó sin uso, ESLint probablemente
+  lo marque — limpiarlo cuando se retome (no es grave, pero es ruido).
+- Commiteado y pusheado a GitHub (`a6c5993 "hicimos el nav"`).
+
+### ⚠️ Pendiente inmediato para retomar mañana
+
+1. **`src/components/Footer.tsx` — todavía no se creó.** Ya se le pasó al usuario la referencia HTML
+   original y las pistas de Tailwind, pero no llegó a escribirlo. Referencia HTML original (de
+   `index.html`):
+   ```html
+   <footer class="py-5 mt-5">
+     <hr class="my-4">
+     <div class="container">
+       <div class="row g-4">
+         <div class="col-md-4 text-center text-md-start">
+           <img src="img/logo.png" alt="El Mas Riko" height="50">
+           <p>Sanguches de milanesa tucumana, como tienen que ser...</p>
+         </div>
+         <div class="col-md-8 text-center text-md-end">
+           <h5>CONTACTO</h5>
+           <p>Peru 2973</p>
+           <p>381-650-5653</p>
+           <p>Desde 08 AM a 12 PM</p>
+         </div>
+       </div>
+     </div>
+     <hr class="my-4">
+     <p class="text-center small">&copy; 2026 El Mas Riko. Todos los derechos reservados.</p>
+   </footer>
+   ```
+   Pistas de Tailwind ya dadas: `flex flex-col md:flex-row justify-between gap-6` para las dos columnas
+   (apiladas en mobile, lado a lado en `md:`+), `border-t` en vez de `<hr>`, y **`mt-auto`** en el `<footer>`
+   — importante porque el `<body>` en `layout.tsx` tiene `flex flex-col`, así que `mt-auto` es lo que empuja
+   el footer al fondo de la ventana aunque el contenido de la página sea corto.
+2. Una vez escrito `Footer.tsx`, conectarlo en `layout.tsx` igual que `Navbar` (esta vez **después** de
+   `{children}`, no antes).
+3. Después del footer: construir el contenido real de `src/app/page.tsx` (Home) — Hero, sección "Nosotros",
+   sección "Especialidades". Referencia HTML original completa en
+   `elmasrico/ElMasRico/frontend/index.html`. Punto a decidir con el usuario cuando se llegue: el hero
+   original tiene un carrusel de Bootstrap (JS con `data-bs-*`, requiere el JS bundle de Bootstrap) — como
+   el proyecto usa Tailwind y no Bootstrap, hay que decidir entre (a) hero estático con una sola imagen,
+   o (b) armar un carrusel simple como Client Component (primer uso real de `"use client"` + `useState` en
+   el proyecto, podría ser una buena oportunidad pedagógica). Todavía no se habló de esto con el usuario.
+4. Recién ahí, fase 4 del roadmap (Carta con datos reales de Prisma).
 
 ## Conceptos ya explicados (no repetir de cero, pero se puede refrescar)
 
@@ -149,6 +237,27 @@ Components).
   variables/parámetros.
 - **`npx prisma validate`** (chequea sintaxis del schema) y **`npx prisma format`** (autoalinea columnas,
   cosmético) como comandos de rutina mientras se escribe el schema.
+- **Server Components**: todo componente en `src/app/` es Server Component por default (se ejecuta en el
+  servidor, sin JS de más al cliente, puede hacer `await prisma....` directo). Client Component (necesita
+  `useState`/`onClick`/APIs de navegador) requiere `"use client"` como primera línea del archivo — no usado
+  todavía en el proyecto, va a aparecer recién si se hace el carrusel del hero como Client Component.
+- **Regla de JSX mayúscula/minúscula**: minúscula (`div`, `nav`, `link`) = tag HTML nativo; mayúscula
+  (`Link`, `Image`, `Navbar`) = JSX busca una variable en scope (importada o definida) y la renderiza como
+  componente. Ligado al concepto de **scope**: una variable solo existe donde fue declarada/importada hacia
+  abajo en ese archivo.
+- **`<Link href="...">`** (`next/link`) reemplaza `<a>` para links internos, navegación sin recarga completa.
+  **`<Image src="..." width height />`** (`next/image`) reemplaza `<img>`, requiere `width`/`height`
+  explícitos, optimiza automático.
+- **Anclas `#id`**: comportamiento del navegador, no de Next — `href="/#nosotros"` combina ruta (`/`) +
+  fragmento (`#nosotros`, un `id` en algún elemento de esa página) para hacer scroll automático ahí.
+- **`layout.tsx` y `{children}`**: el layout envuelve todas las rutas debajo suyo; `{children}` es una prop
+  que Next llena dinámicamente con el `page.tsx` de la ruta actual (una por vez, no todas juntas). Layouts
+  pueden anidarse (no usado todavía, solo el root layout existe). Beneficio extra sobre simplemente duplicar
+  código: al navegar entre rutas que comparten layout, el layout NO se vuelve a montar (el navbar no
+  parpadea/reinicia).
+- **Tailwind, gotcha importante**: una clase mal escrita (typo) no tira ningún error, simplemente no aplica
+  ningún estilo — a diferencia de un error de sintaxis de TS/Prisma, esto es silencioso y hay que
+  detectarlo a ojo comparando con lo esperado.
 
 ## Esquema de datos original (referencia para el Prisma schema)
 
