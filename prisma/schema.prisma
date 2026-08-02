@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,68 +8,65 @@ datasource db {
 }
 
 model Categoria {
-  id     Int    @id @default(autoincrement()) @map("id_categoria")
-  nombre String @db.VarChar(100)
-
+  id        Int        @id @default(autoincrement()) @map("id_categoria")
+  nombre    String     @unique(map: "nombre") @db.VarChar(100)
   productos Producto[]
 
   @@map("categorias")
 }
 
 model Producto {
-  id          Int     @id @default(autoincrement()) @map("id_producto")
-  nombre      String  @db.VarChar(150)
-  precio      Decimal @db.Decimal(10, 2)
-  categoriaId Int     @map("id_categoria")
-
-  categoria Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
-
+  id            Int             @id @default(autoincrement()) @map("id_producto")
+  nombre        String          @unique(map: "name_produc") @db.VarChar(150)
+  precio        Decimal         @db.Decimal(10, 2)
+  categoriaId   Int             @map("id_categoria")
   detallePedido DetallePedido[]
+  categoria     Categoria       @relation(fields: [categoriaId], references: [id], onUpdate: Restrict, map: "productos_ibfk_1")
 
+  @@index([categoriaId], map: "id_categoria")
   @@map("productos")
 }
 
 model Cliente {
-  id        Int     @id @default(autoincrement()) @map("id_cliente")
-  nombre    String  @db.VarChar(150)
-  telefono  String  @db.VarChar(20)
-  direccion String? @db.VarChar(255)
-
-  pedidos Pedido[]
+  id        Int      @id @default(autoincrement()) @map("id_cliente")
+  nombre    String   @db.VarChar(150)
+  telefono  String   @db.VarChar(20)
+  direccion String?  @db.VarChar(255)
+  pedidos   Pedido[]
 
   @@map("clientes")
 }
 
 model Pedido {
-  id        Int      @id @default(autoincrement()) @map("id_pedido")
-  clienteId Int      @map("id_cliente")
-  total     Decimal  @default(0.00) @db.Decimal(10, 2)
-  estado    String   @default("pendiente") @db.VarChar(50)
-  fecha     DateTime @default(now())
-
-  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-
+  id            Int             @id @default(autoincrement()) @map("id_pedido")
+  clienteId     Int             @map("id_cliente")
+  fecha         DateTime?       @default(now()) @db.DateTime(0)
+  total         Decimal         @default(0.00) @db.Decimal(10, 2)
+  estado        String?         @default("pendiente") @db.VarChar(50)
   detallePedido DetallePedido[]
+  cliente       Cliente         @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_pedidos_cliente")
 
+  @@index([clienteId], map: "fk_pedidos_cliente")
   @@map("pedidos")
 }
 
 model DetallePedido {
-  id             Int     @id @default(autoincrement()) @map("id_detalle")
-  pedidoId       Int     @map("id_pedido")
-  productoId     Int     @map("id_producto")
+  id             Int      @id @default(autoincrement()) @map("id_detalle")
+  pedidoId       Int      @map("id_pedido")
+  productoId     Int      @map("id_producto")
   cantidad       Int
-  precioUnitario Decimal @db.Decimal(10, 2)
+  precioUnitario Decimal  @map("precio_unitario") @db.Decimal(10, 2)
+  producto       Producto @relation(fields: [productoId], references: [id], onUpdate: Restrict, map: "detalle_pedido_ibfk_2")
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_detallepedido_pedido")
 
-  pedido   Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Restrict)
-
+  @@index([pedidoId], map: "fk_detallepedido_pedido")
+  @@index([productoId], map: "id_producto")
   @@map("detalle_pedido")
 }
 
 model Usuario {
   id          Int    @id @default(autoincrement()) @map("id_usuario")
-  nombre      String @db.VarChar(100)
+  nombre      String @unique(map: "name_usuario") @db.VarChar(100)
   contrasenia String @db.VarChar(255)
   idRole      Int    @default(1) @map("id_role") @db.TinyInt
 

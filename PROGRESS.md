@@ -77,9 +77,27 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
    nombre en un modelo con FKs dobles (`DetallePedido` — Prisma no lo permite, error real no solo de estilo),
    copiar el largo de `@db.VarChar` de otro campo sin mirar el SQL real, poner `onDelete: Cascade` en una FK
    que en el SQL original no lo tenía.
-4. **Siguiente paso real: conectar el schema contra la base `elmasrico` ya existente y confirmar que
-   coincide.** Como la base ya tiene datos, NO correr `migrate dev` a ciegas — usar `npx prisma db pull`
-   (introspección, comparar contra lo escrito a mano) o `npx prisma migrate diff` primero.
+4. ✅ **Verificado contra la base real con `npx prisma db pull`.** Se hizo primero un commit local
+   (`git commit`, sin remoto configurado — todo local) del schema escrito a mano como red de seguridad,
+   después se corrió `db pull` y se comparó con `git diff`. Encontró diferencias reales:
+   - **Bug real que se nos pasó al escribir a mano**: `Pedido.estado` y `Pedido.fecha` debían ser opcionales
+     (`?`) — el SQL original no los marca `NOT NULL`, a diferencia de `total`/`clienteId`. `db pull` los
+     corrigió solo.
+   - **`@unique` no documentado** en `Categoria.nombre`, `Producto.nombre`, `Usuario.nombre` — la base real
+     tiene constraints que no estaban en `DOCUMENTACION.md` (la doc quedó desactualizada respecto a la base).
+   - Cosas nuevas que trajo la introspección (no son errores, es cómo describe la base real): `@@index(...)`
+     en columnas de FK (MySQL las indexa solas), `map: "..."` dentro de `@relation` (nombre real del
+     constraint en MySQL — algunos con nombre explícito del SQL como `fk_pedidos_cliente`, otros
+     autogenerados por MySQL como `productos_ibfk_1`), `onUpdate: Restrict`.
+   - `DetallePedido.precioUnitario` había vuelto a `precio_unitario` (introspección no impone camelCase) —
+     se restauró a mano el nombre + `@map("precio_unitario")` por consistencia de estilo con el resto del
+     schema (decisión estética, no funcional).
+   - Estado final: schema validado (`prisma validate` OK) y formateado (`prisma format`).
+
+**Fase 2 (modelo de datos con Prisma) queda cerrada** salvo commitear este último ajuste
+(`precioUnitario`, todavía sin commitear). El siguiente paso técnico es correr `npx prisma generate`
+(genera el Prisma Client en `src/generated/prisma`, todavía no se corrió), y con eso ya se puede arrancar la
+fase 3 (landing pública / primer uso de Prisma Client en una página).
 
 ### Diferencias de Prisma v7 vs. los tutoriales (v5/v6) — importante, muerde
 
@@ -96,18 +114,11 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
 
 ### Dónde retomar exactamente
 
-Los 6 modelos ya están escritos, validados y formateados en `prisma/schema.prisma` (ver el archivo, no hace
-falta repetirlos acá). Lo que sigue es **verificar el schema escrito a mano contra la base real
-`elmasrico`** (que ya tiene datos) antes de generar el Prisma Client:
-
-- Opción segura: `npx prisma db pull` sobre una copia de la base, comparar el resultado contra lo que se
-  escribió a mano.
-- Alternativa: `npx prisma migrate diff` para ver diferencias sin tocar nada.
-- Evitar `npx prisma migrate dev` a ciegas — podría intentar alterar una base con datos existentes.
-
-Una vez confirmado que coincide, el paso lógico siguiente es `npx prisma generate` (genera el Prisma Client
-en `src/generated/prisma`) y probar una query real desde código — eso empalma con la fase 3 del roadmap
-(landing pública / primer uso de Prisma Client en una página).
+Los 6 modelos están escritos, validados, verificados contra la base real y formateados en
+`prisma/schema.prisma` — fase 2 cerrada (ver detalle arriba). Falta: commitear el ajuste de
+`precioUnitario`, correr `npx prisma generate` para generar el Prisma Client en `src/generated/prisma`, y
+arrancar la fase 3 del roadmap (landing pública, primer uso real de Prisma Client en una página con Server
+Components).
 
 ## Conceptos ya explicados (no repetir de cero, pero se puede refrescar)
 
