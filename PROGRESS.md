@@ -27,8 +27,8 @@ auth JWT+bcrypt).
 
 1. **Setup del proyecto** ✅ DONE (2026-07-31)
 2. **Modelo de datos con Prisma** ✅ DONE (2026-08-02) — ver detalle en "Estado de la fase 2" abajo
-3. **Landing pública (Server Components, layout)** 🚧 EN CURSO (2026-08-02) — ver "Estado de la fase 3"
-   abajo. ⬅️ ACÁ RETOMAR MAÑANA.
+3. **Landing pública (Server Components, layout)** 🚧 EN CURSO (2026-08-03) — Navbar, Footer y Hero
+   (carrusel) hechos. Faltan las secciones "Nosotros" y "Especialidades". ⬅️ ACÁ RETOMAR.
 4. Carta — productos agrupados por categoría, leídos directo desde Prisma (sin API intermedia)
 5. Formulario de pedido público — Client Component + Server Actions (reemplaza la cadena de 3 fetches con
    axios del original: crear cliente → crear pedido → agregar detalle)
@@ -43,8 +43,9 @@ Creado con `create-next-app@latest . --typescript --tailwind --eslint --app --sr
 en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
 
 - `next@16.2.12`, `react@19.2.4`, `tailwindcss@4`
-- Git inicializado automáticamente por create-next-app (sin commits propios todavía)
-- Estructura: `src/app/layout.tsx` (layout raíz), `src/app/page.tsx` (home, todavía el default de Next.js)
+- Git inicializado automáticamente por create-next-app (ver sección "Git / GitHub" abajo para el estado real)
+- Estructura: `src/app/layout.tsx` (layout raíz, con `<Navbar />` y `<Footer />`), `src/app/page.tsx` (home),
+  y `src/components/` con `Navbar.tsx`, `Footer.tsx` y `HeroCarousel.tsx`
 - Servidor de dev probado y funcionando (`npm run dev` → `http://localhost:3000`), se detuvo al cerrar la
   sesión — para retomar: `npm run dev` desde la raíz del proyecto.
 - `npm audit`: 12 vulnerabilidades "high" en dependencias transitivas del scaffold — no bloqueante para
@@ -52,8 +53,9 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
 
 ## Git / GitHub
 
-- Repo local con 4 commits al 2026-08-02: `a7dba7c` (initial de create-next-app), `0345b6c`/`af4af3b`
-  (schema de Prisma), `a6c5993` ("hicimos el nav").
+- Repo local con 6 commits al 2026-08-03: `a7dba7c` (initial de create-next-app), `0345b6c`/`af4af3b`
+  (schema de Prisma), `a6c5993` ("hicimos el nav"), `f70a9d5` ("corregimos lo de los commits"),
+  `edcac46` ("matamos el footer"). El hero/carrusel todavía **sin commitear** al cierre.
 - Remoto configurado: `origin` → `https://github.com/ramirouehara/el-mas-riko-nextjs.git`. Ya está pusheado
   y sincronizado (`git push` a secas alcanza, quedó el upstream seteado).
 - **Si en algún momento reaparece un error 403 al pushear** ("Permission ... denied to <usuario>"): ya pasó
@@ -162,51 +164,69 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
   vez de `items-center` (Tailwind no tira error en clases mal escritas, solo no aplica el estilo, silencioso).
 - **Assets copiados** a `public/img/`: `logo.png` (de `Frame 1.png` del proyecto original) y `sandwich.png`
   (de `sandwich_sin_fondo 1.png`).
-- **`src/app/page.tsx`**: se vació el contenido default de create-next-app, quedó `return (<></>);` — un
-  fragment vacío. Ojo: el `import Image from "next/image";` de arriba quedó sin uso, ESLint probablemente
-  lo marque — limpiarlo cuando se retome (no es grave, pero es ruido).
-- Commiteado y pusheado a GitHub (`a6c5993 "hicimos el nav"`).
+- **`src/app/page.tsx`**: se vació el contenido default de create-next-app. Al 2026-08-03 renderiza
+  `<HeroCarousel />`.
+- **`src/components/Footer.tsx`**: ✅ terminado (commit `edcac46 "matamos el footer"`). Escrito por el
+  usuario por capas: primero la estructura de elementos pelada, después las clases de Tailwind una tanda
+  a la vez. Estructura final: `<footer className="mt-auto border-t py-12">` → container
+  (`max-w-6xl mx-auto px-4`) → fila de 2 columnas
+  (`flex flex-col md:flex-row justify-between gap-6`) → columna izq (logo `<Image>` 140x60 +
+  `<p>` descripción, `text-center md:text-left`) y columna der (`<h5>CONTACTO</h5>` + 3 `<p>`,
+  `space-y-1 text-center md:text-right`); afuera del container, el `<p>` del copyright con
+  `text-sm border-t text-center mt-* pt-*`.
+  - Se cambió `min-h-full` → **`min-h-screen`** en el `<body>` de `layout.tsx`: `min-h-full` es
+    `min-height: 100%` y no hacía nada porque `<html>` no tiene altura definida, así que el `mt-auto`
+    del footer no tenía espacio sobrante que repartir.
+  - Errores que cometió y corrigió: dejar el `return ( )` vacío (pasó dos veces, con el Footer y con el
+    HeroCarousel — patrón: escribe el esqueleto y se traba en el contenido); poner `md:flex-row` sin el
+    `flex` (sin `display:flex` la propiedad `flex-direction` se ignora, silencioso); reemplazar `pt-4`
+    por `mt-8` en vez de sumarlo (margin = afuera del borde, padding = adentro; con `border-t` la
+    diferencia se ve).
+- **`src/components/HeroCarousel.tsx`**: ✅ terminado y funcionando, **primer Client Component del
+  proyecto** (`"use client"` + `useState`). Sin commitear al cierre de la sesión del 2026-08-03.
+  - Decisión tomada con el usuario: se eligió armar el carrusel a mano en vez de un hero estático,
+    justamente para tener un caso concreto de Server vs Client Component.
+  - Estructura: array `imagenes` (3 objetos `{src, alt}`) declarado **afuera** del componente (no depende
+    del estado, se crea una sola vez); `const [actual, setActual] = useState(0)`; funciones `siguiente()`
+    y `paAtras()` declaradas **adentro** (necesitan `actual`/`setActual` en scope); el JSX no cambia
+    nunca, lo único que cambia es el índice → `imagenes[actual].src`.
+  - JSX final: `<div className="relative h-[60vh]">` con, en este orden, `<Image fill object-cover>`,
+    overlay (`absolute inset-0 bg-black/30 pointer-events-none`), texto centrado
+    (`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-white`) y los dos
+    `<button>` al final (`absolute right-4/left-4 top-1/2 -translate-y-1/2`).
+  - Errores que cometió y corrigió (útiles si se repiten): llave `}` de más cerrando el componente antes
+    del `return`; `if (actual >= imagenes.length)` en vez de `actual + 1 >= ...` (hay que validar el
+    índice **destino**, no el actual, porque el actual ya se está mostrando y se sabe válido); en
+    `paAtras` puso `imagenes.length - 1` en la **condición** en lugar de en el **valor** de rescate
+    (invirtió los dos roles y rompió lo que ya andaba); hardcodear `setActual(2)` en vez de
+    `imagenes.length - 1`; `==` en vez de `===`; las dos flechas `→` en ambos botones; y otra vez el
+    typo silencioso de Tailwind, esta vez **`text-5x1`** con el número 1 en vez de la letra ele.
+- **`next.config.ts`**: se agregó `images.remotePatterns` con los 3 dominios externos de las fotos del
+  hero (`imag.bonviveur.com`, `www.clarin.com`, `statics.diariomendoza.com.ar`), en la forma objeto
+  (`{protocol, hostname, pathname: "/**"}`). Se eligió esto sobre descargar las imágenes a `public/`.
+  Verificado contra la doc de la versión instalada
+  (`node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md:533`). **Ojo:
+  `next.config.ts` no toma hot reload** — hay que reiniciar `npm run dev`.
 
-### ⚠️ Pendiente inmediato para retomar mañana
+### ⚠️ Pendiente inmediato para retomar
 
-1. **`src/components/Footer.tsx` — todavía no se creó.** Ya se le pasó al usuario la referencia HTML
-   original y las pistas de Tailwind, pero no llegó a escribirlo. Referencia HTML original (de
-   `index.html`):
-   ```html
-   <footer class="py-5 mt-5">
-     <hr class="my-4">
-     <div class="container">
-       <div class="row g-4">
-         <div class="col-md-4 text-center text-md-start">
-           <img src="img/logo.png" alt="El Mas Riko" height="50">
-           <p>Sanguches de milanesa tucumana, como tienen que ser...</p>
-         </div>
-         <div class="col-md-8 text-center text-md-end">
-           <h5>CONTACTO</h5>
-           <p>Peru 2973</p>
-           <p>381-650-5653</p>
-           <p>Desde 08 AM a 12 PM</p>
-         </div>
-       </div>
-     </div>
-     <hr class="my-4">
-     <p class="text-center small">&copy; 2026 El Mas Riko. Todos los derechos reservados.</p>
-   </footer>
-   ```
-   Pistas de Tailwind ya dadas: `flex flex-col md:flex-row justify-between gap-6` para las dos columnas
-   (apiladas en mobile, lado a lado en `md:`+), `border-t` en vez de `<hr>`, y **`mt-auto`** en el `<footer>`
-   — importante porque el `<body>` en `layout.tsx` tiene `flex flex-col`, así que `mt-auto` es lo que empuja
-   el footer al fondo de la ventana aunque el contenido de la página sea corto.
-2. Una vez escrito `Footer.tsx`, conectarlo en `layout.tsx` igual que `Navbar` (esta vez **después** de
-   `{children}`, no antes).
-3. Después del footer: construir el contenido real de `src/app/page.tsx` (Home) — Hero, sección "Nosotros",
-   sección "Especialidades". Referencia HTML original completa en
-   `elmasrico/ElMasRico/frontend/index.html`. Punto a decidir con el usuario cuando se llegue: el hero
-   original tiene un carrusel de Bootstrap (JS con `data-bs-*`, requiere el JS bundle de Bootstrap) — como
-   el proyecto usa Tailwind y no Bootstrap, hay que decidir entre (a) hero estático con una sola imagen,
-   o (b) armar un carrusel simple como Client Component (primer uso real de `"use client"` + `useState` en
-   el proyecto, podría ser una buena oportunidad pedagógica). Todavía no se habló de esto con el usuario.
-4. Recién ahí, fase 4 del roadmap (Carta con datos reales de Prisma).
+1. **Commitear el hero** (`src/components/HeroCarousel.tsx` + `next.config.ts` + `page.tsx`). Estaba sin
+   commitear al cierre del 2026-08-03.
+2. **Secciones "Nosotros" y "Especialidades"** en `src/app/page.tsx` — es lo único que falta de la fase 3.
+   Son HTML estático (Server Components, sin `"use client"`), así que deberían ir bastante más rápido que
+   el hero. Referencia HTML original en `elmasrico/ElMasRico/frontend/index.html` (después de la línea 84).
+   Necesitan `id="nosotros"` e `id="especialidades"` para que funcionen las anclas de los links que ya
+   están escritos en el `Navbar`.
+3. Recién ahí, fase 4 del roadmap (Carta con datos reales de Prisma).
+
+### Pendientes menores (no bloquean nada)
+
+- `globals.css` (bloque `@theme inline`) todavía tiene `--font-sans: var(--font-geist-sans)` y
+  `--font-mono: var(--font-geist-mono)` apuntando a variables que ya no existen desde que se sacaron los
+  fonts de create-next-app del `layout.tsx`.
+- Verificar que se haya sacado el `import Image from "next/image"` sin usar de `src/app/page.tsx`.
+- El `<h5>CONTACTO</h5>` del footer se ve igual que un párrafo: el reset de Tailwind (Preflight) le saca
+  tamaño y negrita a todos los headings. Si se lo quiere destacar, va con clases explícitas.
 
 ## Conceptos ya explicados (no repetir de cero, pero se puede refrescar)
 
@@ -257,7 +277,71 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
   parpadea/reinicia).
 - **Tailwind, gotcha importante**: una clase mal escrita (typo) no tira ningún error, simplemente no aplica
   ningún estilo — a diferencia de un error de sintaxis de TS/Prisma, esto es silencioso y hay que
-  detectarlo a ojo comparando con lo esperado.
+  detectarlo a ojo comparando con lo esperado. Ya pasó 3 veces: `intems-center`, `md:flex-row` sin `flex`,
+  y `text-5x1` (número 1 en vez de letra ele — el más común de todos).
+
+### Agregados el 2026-08-03 (fase 3: footer + hero)
+
+- **Por qué JSX y no HTML** — explicado con contraste concreto contra su propio `frontend/js/categorias.js`
+  (el `fila.innerHTML = \`...\`` dentro del `forEach`): HTML solo expresa lo que se sabe de antemano, así que
+  para datos dinámicos él **ya estaba escribiendo código que genera HTML**, solo que como string opaco
+  (sin validación de tags, sin tipado, con `innerHTML = ""` manual, con `data-id` + reconexión de listeners
+  aparte, y con riesgo de XSS). JSX es lo mismo pero que el compilador entiende como estructura. De ahí
+  **declarativo vs imperativo**: describís cómo se ve la UI para un estado dado, en vez de dictar los pasos
+  de la mutación del DOM.
+- **Las llaves `{}` en JSX** = "la puerta de vuelta a JavaScript". Comillas = string literal, llaves =
+  expresión JS evaluada. Sirve en atributos (`width={140}`) y en contenido (`{producto.nombre}`). Se conectó
+  con el `{children}` del layout, que ya venía usando sin saber por qué. Mencionado el `style={{...}}` de
+  doble llave (llaves de JS + objeto literal) aunque todavía no se usó.
+- **Client Components**: `"use client"` como primera línea. Los dos motivos concretos por los que el
+  carrusel lo necesita (recordar algo que cambia después de cargar la página; y el `onClick`, que es una
+  función y no se puede serializar en HTML). Aclarados los dos malentendidos típicos: **no** significa "no
+  se renderiza en el servidor" (se renderiza igual para el HTML inicial), y **es contagioso hacia abajo**
+  (lo que importes desde un Client Component también se vuelve cliente) → por eso conviene ponerlo lo más
+  abajo posible en el árbol. Un Server Component **sí puede** renderizar un Client Component (`page.tsx`
+  renderizando `<HeroCarousel />`); al revés no, sin cuidados especiales.
+- **`useState`**: por qué una variable común no sirve (el componente es una función que React re-ejecuta;
+  una variable normal ni sobrevive al re-render ni avisa que cambió). Devuelve un array de 2 que se desarma
+  con destructuring: valor actual + función setter. El setter hace dos cosas: guarda y **dispara el
+  re-render**. Nunca asignar directo.
+- **Handlers de eventos**: `onClick` recibe **una función, no una llamada**. `onClick={siguiente}` (sin
+  paréntesis) pasa la referencia; `onClick={() => setActual(...)}` usa la flecha para **diferir** la
+  ejecución. `onClick={siguiente()}` la ejecutaría durante el render → loop infinito.
+- **Índices fuera de rango en JS**: `imagenes[-1]` o `imagenes[3]` devuelven `undefined` **sin error**; el
+  crash aparece una línea después al hacer `.src`, o sea el stack trace apunta a otro lado que el problema
+  real.
+- **`===` vs `==`**: `==` convierte tipos (`"1" == 1` → true). Convención: siempre `===`.
+- **Breakpoints de Tailwind**: `md:` etc. son **`min-width`**, "de ese ancho para arriba", no un tipo de
+  dispositivo — `md:` también aplica en `lg`, `xl`, etc. Por eso Tailwind es mobile-first: el caso chico sin
+  prefijo, los grandes con prefijo pisándolo. Nunca al revés. Tabla: `sm` 640 / `md` 768 / `lg` 1024 /
+  `xl` 1280 / `2xl` 1536. Se conectó con el `col-md-*` de Bootstrap, que ya usaba el mismo concepto.
+- **Escala de espaciado de Tailwind**: cada unidad = `0.25rem` (número ÷ 4 = rem). Aplica a `m`, `p`, `gap`,
+  `space-y`. **Ojo**: Bootstrap y Tailwind usan los mismos nombres con valores distintos (`py-5` = 3rem en
+  Bootstrap vs 1.25rem en Tailwind) — no se copian los números tal cual al traducir. Notación arbitraria
+  `h-[60vh]` / `mt-[70px]` para lo que no está en la escala, a usar con moderación.
+- **Box model — margin vs padding respecto a un borde**: el borde es la frontera, `margin` empuja desde
+  afuera y `padding` desde adentro. Sin `border`/`bg` la diferencia no se ve; con `border-t` sí.
+- **`fill` vs `object-cover` (no son lo mismo, costó)**: `fill` (prop de `next/image`) decide **el tamaño**
+  — la imagen ocupa todo el contenedor, vía `position:absolute`, y por eso el contenedor necesita `relative`
+  + altura. `object-cover` (CSS puro) decide **cómo se acomoda el contenido adentro de esa caja** —
+  recortarse en vez de deformarse. Analogía que funcionó: `fill` es el tamaño del marco, `object-cover` es
+  cómo recortás la foto para que entre. Prueba empírica: sacar uno u otro da resultados distintos.
+  Confusión de nombres a tener presente: la prop `fill` de next/image ≠ `object-fit: fill` de CSS.
+- **Apilado de elementos (stacking)**: los elementos **posicionados** (`relative`/`absolute`/…) se pintan
+  **encima** de los `static`, sin importar el orden en el DOM — por eso la `<Image fill>` tapaba el botón y
+  se comía los clics. Entre dos posicionados gana el que va **después en el DOM** → ordenando bien
+  (imagen → overlay → texto → botones) no hizo falta un solo `z-index`.
+- **`pointer-events-none`**: "visible pero invisible al mouse, los clics me atraviesan". Necesario en el
+  overlay, que tiene que estar encima sí o sí y si no se comería los clics de los botones.
+- **Centrado de elementos posicionados**: `top-1/2` + `-translate-y-1/2` (y el par en X). El `top-1/2` mide
+  hasta el borde superior del elemento, el `translate` compensa la mitad de su propia altura — funciona sin
+  saber cuánto mide.
+- **`bg-black/40` vs `opacity-40`**: la barra aplica opacidad **al color**; `opacity` la aplica al elemento
+  **y a todos sus hijos**. Para transparentar un fondo, siempre `bg-color/N`.
+- **`images.remotePatterns` en `next.config.ts`**: `next/image` bloquea dominios externos por defecto (para
+  que nadie use tu servidor para optimizar imágenes ajenas); hay que declararlos. Dos formas: `new URL(...)`
+  o el objeto `{protocol, hostname, pathname}`. Comodines: `*` = un segmento, `**` = cualquier cantidad.
+  El hostname tiene que ser exacto (`www.clarin.com` ≠ `clarin.com`).
 
 ## Esquema de datos original (referencia para el Prisma schema)
 
