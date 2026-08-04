@@ -6,7 +6,7 @@ export default function Navbar() {
     return(
         <nav className="flex items-center justify-between px-4 py-3">
             <Link href="/">
-                <Image src="/img/logo.png" alt="El Mas Riko" width={140} height={60} />
+                <Image src="/img/logo.png" alt="El Mas Riko" width={140} height={68} />
             </Link>
 
             <ul className="flex items-center gap-3">

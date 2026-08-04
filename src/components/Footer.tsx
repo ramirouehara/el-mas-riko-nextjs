@@ -8,7 +8,7 @@ export default function Footer () {
             <div className="flex flex-col md:flex-row justify-between gap-6">
 
                 <div className="text-center md:text-left">
-                    <Image src="/img/logo.png" alt="El Mas Riko" width={140} height={60} />
+                    <Image src="/img/logo.png" alt="El Mas Riko" width={140} height={68} />
 
                     <p>
                     Sanguches de milanesa tucumana, como tienen que ser...
