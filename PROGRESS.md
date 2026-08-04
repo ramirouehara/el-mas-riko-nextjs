@@ -27,8 +27,8 @@ auth JWT+bcrypt).
 
 1. **Setup del proyecto** ✅ DONE (2026-07-31)
 2. **Modelo de datos con Prisma** ✅ DONE (2026-08-02) — ver detalle en "Estado de la fase 2" abajo
-3. **Landing pública (Server Components, layout)** 🚧 EN CURSO (2026-08-03) — Navbar, Footer y Hero
-   (carrusel) hechos. Faltan las secciones "Nosotros" y "Especialidades". ⬅️ ACÁ RETOMAR.
+3. **Landing pública (Server Components, layout)** 🚧 EN CURSO (2026-08-03) — Navbar, Footer, Hero
+   (carrusel) y sección "Nosotros" hechos. Falta solo la sección "Especialidades". ⬅️ ACÁ RETOMAR.
 4. Carta — productos agrupados por categoría, leídos directo desde Prisma (sin API intermedia)
 5. Formulario de pedido público — Client Component + Server Actions (reemplaza la cadena de 3 fetches con
    axios del original: crear cliente → crear pedido → agregar detalle)
@@ -53,9 +53,11 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
 
 ## Git / GitHub
 
-- Repo local con 6 commits al 2026-08-03: `a7dba7c` (initial de create-next-app), `0345b6c`/`af4af3b`
+- Repo local con 7 commits al 2026-08-03: `a7dba7c` (initial de create-next-app), `0345b6c`/`af4af3b`
   (schema de Prisma), `a6c5993` ("hicimos el nav"), `f70a9d5` ("corregimos lo de los commits"),
-  `edcac46` ("matamos el footer"). El hero/carrusel todavía **sin commitear** al cierre.
+  `edcac46` ("matamos el footer"), `18e98cc` ("hicimo el hero").
+- ⚠️ Al cierre de la **segunda sesión del 2026-08-03** el working tree tiene cambios **sin commitear**:
+  `src/app/page.tsx` (sección "Nosotros") y `PROGRESS.md`. El usuario dijo que commitea él.
 - Remoto configurado: `origin` → `https://github.com/ramirouehara/el-mas-riko-nextjs.git`. Ya está pusheado
   y sincronizado (`git push` a secas alcanza, quedó el upstream seteado).
 - **Si en algún momento reaparece un error 403 al pushear** ("Permission ... denied to <usuario>"): ya pasó
@@ -116,10 +118,9 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
      schema (decisión estética, no funcional).
    - Estado final: schema validado (`prisma validate` OK) y formateado (`prisma format`).
 
-**Fase 2 (modelo de datos con Prisma) queda cerrada** salvo commitear este último ajuste
-(`precioUnitario`, todavía sin commitear). El siguiente paso técnico es correr `npx prisma generate`
-(genera el Prisma Client en `src/generated/prisma`, todavía no se corrió), y con eso ya se puede arrancar la
-fase 3 (landing pública / primer uso de Prisma Client en una página).
+**Fase 2 (modelo de datos con Prisma) queda cerrada**: el ajuste de `precioUnitario` ya está commiteado y
+`npx prisma generate` ya se corrió (el Prisma Client existe en `src/generated/prisma`, gitignoreado). Ver
+"Dónde retomar (fase 2, ya cerrada)" más abajo.
 
 ### Diferencias de Prisma v7 vs. los tutoriales (v5/v6) — importante, muerde
 
@@ -140,7 +141,7 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
 `npx prisma generate` ya se corrió (Prisma Client existe en `src/generated/prisma`, gitignoreado). Fase 2
 100% cerrada. Sigue la fase 3, detallada abajo.
 
-## Estado de la fase 3 (Landing pública) — al 2026-08-02
+## Estado de la fase 3 (Landing pública) — al 2026-08-03
 
 ### Hecho
 
@@ -164,8 +165,22 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
   vez de `items-center` (Tailwind no tira error en clases mal escritas, solo no aplica el estilo, silencioso).
 - **Assets copiados** a `public/img/`: `logo.png` (de `Frame 1.png` del proyecto original) y `sandwich.png`
   (de `sandwich_sin_fondo 1.png`).
-- **`src/app/page.tsx`**: se vació el contenido default de create-next-app. Al 2026-08-03 renderiza
-  `<HeroCarousel />`.
+- **`src/app/page.tsx`**: se vació el contenido default de create-next-app. Al cierre del 2026-08-03
+  renderiza un **Fragment `<>...</>`** con `<HeroCarousel />` + la `<section id="nosotros">` terminada.
+  - Se eligió el Fragment sobre un `<main>` (se le ofrecieron las dos, `<main>` era lo más semántico y lo
+    que tenía el original — decisión del usuario, funcionalmente equivalente).
+  - **Sección "Nosotros" ✅ terminada** (sin commitear todavía al cierre de la sesión). Escrita otra vez
+    por capas (esqueleto pelado primero, clases de Tailwind después, div por div explicando qué hace cada
+    uno). Estructura: `<section id="nosotros" className="py-16">` → container
+    (`max-w-6xl mx-auto px-4`) → fila (`flex flex-col md:flex-row items-center gap-8`) → col izq (`<div>`
+    sin clases, con `<Image src="/img/sandwich.png" width={200} height={200}>`) y col der
+    (`text-center md:text-left`, con `<h2 className="text-3xl font-bold mb-4">` + `<p className="leading-relaxed">`).
+  - Errores que cometió y corrigió: `<Image>` con solo `src` (ver abajo, el ida y vuelta sobre por qué
+    TypeScript lo marca en rojo); puso `logo.png` en vez de `sandwich.png`; anidó los dos `<div>` de columna
+    en línea recta en vez de como hermanos; y **el cuarto typo silencioso de Tailwind**: `max-2-6xl` en vez
+    de `max-w-6xl` (la `2` está al lado de la `w` en el teclado).
+  - Dato útil: `public/img/sandwich.png` es de **272×272** (cuadrada), por eso el `width={200} height={200}`
+    no la deforma. `logo.png` es 318×155.
 - **`src/components/Footer.tsx`**: ✅ terminado (commit `edcac46 "matamos el footer"`). Escrito por el
   usuario por capas: primero la estructura de elementos pelada, después las clases de Tailwind una tanda
   a la vez. Estructura final: `<footer className="mt-auto border-t py-12">` → container
@@ -183,7 +198,7 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
     por `mt-8` en vez de sumarlo (margin = afuera del borde, padding = adentro; con `border-t` la
     diferencia se ve).
 - **`src/components/HeroCarousel.tsx`**: ✅ terminado y funcionando, **primer Client Component del
-  proyecto** (`"use client"` + `useState`). Sin commitear al cierre de la sesión del 2026-08-03.
+  proyecto** (`"use client"` + `useState`). Commit `18e98cc "hicimo el hero"`.
   - Decisión tomada con el usuario: se eligió armar el carrusel a mano en vez de un hero estático,
     justamente para tener un caso concreto de Server vs Client Component.
   - Estructura: array `imagenes` (3 objetos `{src, alt}`) declarado **afuera** del componente (no depende
@@ -210,13 +225,32 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
 
 ### ⚠️ Pendiente inmediato para retomar
 
-1. **Commitear el hero** (`src/components/HeroCarousel.tsx` + `next.config.ts` + `page.tsx`). Estaba sin
-   commitear al cierre del 2026-08-03.
-2. **Secciones "Nosotros" y "Especialidades"** en `src/app/page.tsx` — es lo único que falta de la fase 3.
-   Son HTML estático (Server Components, sin `"use client"`), así que deberían ir bastante más rápido que
-   el hero. Referencia HTML original en `elmasrico/ElMasRico/frontend/index.html` (después de la línea 84).
-   Necesitan `id="nosotros"` e `id="especialidades"` para que funcionen las anclas de los links que ya
-   están escritos en el `Navbar`.
+1. **Commitear lo de Nosotros.** Al cerrar la sesión del 2026-08-03 el working tree tiene cambios sin
+   commitear en `src/app/page.tsx` (+ este `PROGRESS.md`). El usuario dijo que commitea él.
+2. **Sección "Especialidades"** en `src/app/page.tsx` — es lo único que falta de la fase 3. Necesita
+   `id="especialidades"` para que funcione el ancla del link "Productos" que ya está en el `Navbar`.
+   Referencia HTML original en `elmasrico/ElMasRico/frontend/index.html` (después de la línea 84).
+   Ya se le explicó todo el concepto de `.map()` + `key` (ver "Conceptos" abajo) y se le dejaron **3 pasos**
+   planteados, ninguno empezado:
+   - **Paso 1 — el array.** Declararlo **afuera** del componente (mismo criterio que el array `imagenes` del
+     HeroCarousel: no depende del estado). 5 objetos con `nombre` y `src`:
+
+     | nombre | src |
+     |---|---|
+     | Sanguches | `https://www.clarin.com/img/2021/09/06/ZUZbnAZNY_1256x620__2.jpg` |
+     | Minutas | `https://upload.wikimedia.org/wikipedia/commons/9/96/Milanesa_napolitana_con_papas_fritas_rodajas_de_tomate_y_or%C3%A9gano.jpg` |
+     | Empanadas | `https://images.getrecipekit.com/20220816143651-1.png?class=16x9` |
+     | Pizzas | `https://i0.wp.com/cremigal.com/wp-content/uploads/2022/04/CREMIGAL-10-scaled.jpg?w=1920&ssl=1` |
+     | Bebidas | `https://www.semanarioextra.com.ar/wp-content/uploads/2022/01/56afe82bc46188be6a8b4606.jpg` |
+
+   - **Paso 2 — los dominios.** Agregar a `next.config.ts` los 4 hosts que faltan: `upload.wikimedia.org`,
+     `images.getrecipekit.com`, `i0.wp.com`, `www.semanarioextra.com.ar` (`www.clarin.com` ya está).
+     Recordarle que `next.config.ts` **no toma hot reload** → reiniciar `npm run dev`.
+   - **Paso 3 — el JSX**: la grilla de tarjetas con `.map()`. Original en Bootstrap: `<h2>` centrado
+     "NUESTRAS ESPECIALIDADES ❤️❤️❤️" + 5 cards de `col-6 col-md-4 col-lg-2` con imagen
+     (`height: 300px; object-fit: cover`) y el nombre debajo. Traducción sugerida a Tailwind: grid
+     (`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4`) — **`grid` todavía no se explicó**, es la
+     oportunidad natural para introducirlo (hasta ahora solo se usó flexbox).
 3. Recién ahí, fase 4 del roadmap (Carta con datos reales de Prisma).
 
 ### Pendientes menores (no bloquean nada)
@@ -224,7 +258,8 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
 - `globals.css` (bloque `@theme inline`) todavía tiene `--font-sans: var(--font-geist-sans)` y
   `--font-mono: var(--font-geist-mono)` apuntando a variables que ya no existen desde que se sacaron los
   fonts de create-next-app del `layout.tsx`.
-- Verificar que se haya sacado el `import Image from "next/image"` sin usar de `src/app/page.tsx`.
+- ~~Verificar que se haya sacado el `import Image from "next/image"` sin usar de `src/app/page.tsx`.~~
+  ✅ Resuelto solo: la sección "Nosotros" ahora sí usa `<Image>`.
 - El `<h5>CONTACTO</h5>` del footer se ve igual que un párrafo: el reset de Tailwind (Preflight) le saca
   tamaño y negrita a todos los headings. Si se lo quiere destacar, va con clases explícitas.
 
@@ -259,8 +294,8 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
   cosmético) como comandos de rutina mientras se escribe el schema.
 - **Server Components**: todo componente en `src/app/` es Server Component por default (se ejecuta en el
   servidor, sin JS de más al cliente, puede hacer `await prisma....` directo). Client Component (necesita
-  `useState`/`onClick`/APIs de navegador) requiere `"use client"` como primera línea del archivo — no usado
-  todavía en el proyecto, va a aparecer recién si se hace el carrusel del hero como Client Component.
+  `useState`/`onClick`/APIs de navegador) requiere `"use client"` como primera línea del archivo — ya usado
+  en `HeroCarousel.tsx`, ver el detalle ampliado en los conceptos del 2026-08-03 más abajo.
 - **Regla de JSX mayúscula/minúscula**: minúscula (`div`, `nav`, `link`) = tag HTML nativo; mayúscula
   (`Link`, `Image`, `Navbar`) = JSX busca una variable en scope (importada o definida) y la renderiza como
   componente. Ligado al concepto de **scope**: una variable solo existe donde fue declarada/importada hacia
@@ -277,8 +312,12 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
   parpadea/reinicia).
 - **Tailwind, gotcha importante**: una clase mal escrita (typo) no tira ningún error, simplemente no aplica
   ningún estilo — a diferencia de un error de sintaxis de TS/Prisma, esto es silencioso y hay que
-  detectarlo a ojo comparando con lo esperado. Ya pasó 3 veces: `intems-center`, `md:flex-row` sin `flex`,
-  y `text-5x1` (número 1 en vez de letra ele — el más común de todos).
+  detectarlo a ojo comparando con lo esperado. Ya pasó **4 veces**: `intems-center`, `md:flex-row` sin
+  `flex`, `text-5x1` (número 1 en vez de letra ele) y `max-2-6xl` en vez de `max-w-6xl`. **Es la fuente de
+  bugs #1 del proyecto** — ante cualquier estilo que "no se aplica", revisar el spelling de la clase antes
+  que nada. Truco de diagnóstico que ya se usó: asociar cada clase con su síntoma visible (ej. sin
+  `max-w-*`, el `mx-auto` no centra nada porque no hay ancho sobrante que repartir → el texto se estira de
+  punta a punta).
 
 ### Agregados el 2026-08-03 (fase 3: footer + hero)
 
@@ -342,6 +381,73 @@ Los 6 modelos están escritos, validados, verificados contra la base real, forma
   que nadie use tu servidor para optimizar imágenes ajenas); hay que declararlos. Dos formas: `new URL(...)`
   o el objeto `{protocol, hostname, pathname}`. Comodines: `*` = un segmento, `**` = cualquier cantidad.
   El hostname tiene que ser exacto (`www.clarin.com` ≠ `clarin.com`).
+
+### Agregados el 2026-08-03, segunda sesión (fase 3: sección Nosotros)
+
+- **Cómo funcionan realmente las anclas `#id`** (lo volvió a preguntar: "¿cómo sabe Next a dónde apunta?").
+  La clave que faltaba: **Next no sabe nada, lo hace el navegador**. El navegador parte la URL en ruta +
+  fragmento y los trata distinto — la ruta sale a la red, el fragmento **nunca sale**, es 100% del lado del
+  cliente. La conexión es literalmente **string matching entre el `href` y el atributo `id`**; si no
+  matchea, no hay error ni warning, simplemente no pasa nada (otro caso silencioso). Los `id` tienen que ser
+  únicos en el documento — por eso sirve `id` y no `class`. Único lugar donde Next mete mano: en la
+  navegación con `<Link>` entre rutas no hay recarga real, así que no existe el evento "terminé de cargar"
+  donde el navegador scrollearía → Next hace ese scroll por su cuenta después de renderizar.
+- **Un componente devuelve UNA sola cosa** — es JS puro: `return` devuelve un valor, no podés devolver dos
+  elementos hermanos sueltos (igual que no podés hacer `return 1, 2`). Error que aparece:
+  *"Adjacent JSX elements must be wrapped in an enclosing tag"*. Dos salidas: un tag real (`<main>`,
+  `<div>`) o un **Fragment** `<>...</>`, un envoltorio invisible que no genera ningún elemento en el HTML
+  final (para agrupar sin ensuciar el DOM).
+- **Props = un solo objeto, y TypeScript chequea su forma.** Costó, se explicó dos veces (la segunda desde
+  cero, que fue la que funcionó). El puente conceptual: `<Image src="..." />` se convierte más o menos en
+  `Image({ src: "..." })` — los atributos del tag se juntan **en un objeto** que es el único argumento.
+  El tipo declara qué claves lleva ese objeto, y el `?` es el **único** diferenciador entre obligatoria y
+  opcional (`alt: string` vs `width?: number`). El error no tiene nada de React ni de Next: es el mismo que
+  daría `saludar({ edad: 30 })` con `function saludar(p: { nombre: string; edad?: number })`. Consejo
+  práctico que se le dio: **pasar el mouse por el subrayado rojo y leer el mensaje** — casi siempre dice
+  literal `Property 'X' is missing in type ... but required in type ...`.
+- **TypeScript vs. runtime: son DOS controles distintos en momentos distintos.** Concepto importante que
+  salió de un error real: al poner solo `alt` el rojo desapareció, pero la página igual explota. En
+  `next/image` **solo `alt` es obligatoria en el tipo** (`node_modules/next/dist/shared/lib/get-img-props.d.ts:15-19`
+  — `width?`/`height?` llevan `?`), y sin embargo Next las exige igual, tirando el error recién al ejecutar
+  (`get-img-props.js:340`: `Image with src "..." is missing required "width" property.`). El motivo del
+  diseño: "width es obligatorio salvo que hayas puesto `fill`" es una regla condicional entre props —
+  expresable en TS con uniones, pero con mensajes de error horribles, así que Next eligió runtime.
+  **Moraleja general: que no haya subrayado rojo no significa que ande.** El navegador es el juez final.
+- **Por qué `width`/`height` son obligatorias** en `next/image`: Next necesita la proporción **antes** de
+  descargar la imagen para reservarle el lugar y evitar el *layout shift* (que el contenido de abajo salte
+  cuando la imagen carga). Son las dimensiones **intrínsecas**, el tamaño visual final se cambia igual por
+  CSS. Y tienen que respetar la proporción real del archivo o la imagen sale deformada. `alt` es
+  obligatoria por accesibilidad (`<img>` de HTML te deja omitirla, `next/image` no).
+- **Método de trabajo que ya está funcionando bien: escribir por capas.** Primero el esqueleto de tags sin
+  una sola clase (se le da el árbol de anidación en prosa/ASCII), se verifica en el navegador que se vea
+  "apilado y feo", y recién después las clases de Tailwind **div por div, explicando qué trabajo hace cada
+  uno**. Se usó en el Footer y en Nosotros, con buen resultado. Corolario que se le explicó: 3 `<div>`
+  anidados no es de más — cada uno hace **un** trabajo distinto (limitar ancho / hacer la fila / ser celda),
+  y mezclarlos en uno es lo que después no se entiende.
+
+### Explicado pero TODAVÍA NO PRACTICADO (queda pendiente escribirlo) — `.map()` y `key`
+
+Se explicó completo al final de la sesión del 2026-08-03, justo antes de cortar; **el usuario no llegó a
+escribir nada de esto**. Al retomar, no hace falta re-explicar de cero, pero conviene refrescar:
+
+- **El problema**: 5 tarjetas idénticas en estructura, distintas solo en imagen y título. Copiar/pegar 5
+  veces = cambiar un detalle en 5 lugares. Y los datos algún día vienen de la base, donde ni siquiera sabés
+  cuántos son al escribir el código.
+- **El puente con lo que ya sabe**: es el mismo problema que resolvía con
+  `categorias.forEach(cat => fila.innerHTML += \`<tr>...\`)` en `frontend/js/categorias.js` — recorrer un
+  array y armar HTML. La versión de React es la misma idea pero **produciendo elementos** en vez de pegar
+  strings.
+- **`.map()` en JS pelado**: método de array, aplica una función a cada elemento y devuelve un **array
+  nuevo** (no toca el original). La función puede devolver lo que sea, incluido JSX → te queda un **array
+  de elementos**.
+- **En JSX un array se renderiza solo**: React lo desarma y pinta los elementos como hermanos. Se apoya en
+  las llaves `{}` (la puerta de vuelta a JS) y en que adentro va **una expresión**. Por eso en React se usa
+  `.map()` y no `for`: un `for` es una *sentencia*, no devuelve un valor, no se puede poner entre llaves.
+- **La prop `key`**: warning típico *"Each child in a list should have a unique key prop"*. Motivo: cuando
+  la lista cambia, React compara la versión vieja con la nueva para tocar el DOM lo menos posible; sin
+  identificador solo puede comparar por posición, y si insertás algo al principio cree que cambiaron todos.
+  Va en el elemento **más externo** que devuelve el `.map()` y tiene que ser única entre hermanos. Con datos
+  de la base va a ser el `id`; en las especialidades alcanza con el `nombre` porque no se repite.
 
 ## Esquema de datos original (referencia para el Prisma schema)
 
