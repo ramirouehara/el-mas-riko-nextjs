@@ -5,6 +5,24 @@ sangucheria) usando Next.js, como proyecto de aprendizaje. La app original está
 `elmasrico/ElMasRico/DOCUMENTACION.md` (frontend HTML/CSS/JS vanilla + Bootstrap, backend Express + MySQL,
 auth JWT+bcrypt).
 
+## ⭐ PARA QUÉ EXISTE ESTE PROYECTO (contexto revelado el 2026-08-04)
+
+**Esto no es un proyecto en sí mismo: es la Fase 0 de otro.** El usuario está armando **LANCER**, una app de
+gestión integral para un local que vende productos Apple (inbox unificado de WhatsApp/Instagram/Facebook +
+IA para filtrar leads + CRM + métricas + stock). Tiene un `PLANNING.md` propio con stack, roadmap de 8 fases
+y estimación (~235h). Stack de LANCER: Next.js App Router, **PostgreSQL** (no MySQL), Prisma, Socket.io para
+tiempo real, API de Claude para la IA, deploy en Railway/Render como **servidor persistente** (no serverless).
+
+ElMasRico es el vehículo de aprendizaje elegido para esa Fase 0, y es mejor que la "mini-app descartable tipo
+lista de tareas" que proponía el plan: el usuario ya conoce el dominio de memoria, así que lo único nuevo es
+el framework, y tiene el original contra el que comparar.
+
+**Consecuencia práctica para cómo guiar esto:** lo que importa es **el flujo de Next.js**, no terminar la
+sangucheria ni pulir el CSS. El usuario lo dijo explícitamente: *"no me fijé tanto en el tailwind realmente,
+me fijé más en el flujo de cómo funciona Next"*. Se nota en sus preguntas — todas fueron sobre routing,
+layouts, `children`, Server vs Client, y de dónde salen los datos; ninguna sobre Tailwind. **Priorizar
+conceptos transferibles a LANCER por sobre completitud del proyecto.**
+
 ## Cómo se trabaja esto (importante para retomar)
 
 - El usuario sabe algo de React/Next/TypeScript pero no a fondo. El objetivo es que **programe él**,
@@ -13,6 +31,9 @@ auth JWT+bcrypt).
   (Server vs Client Components, App Router, Server Actions, etc.), y dejar que el usuario escriba el código,
   revisando/corrigiendo.
 - No avanzar de fase sin que la fase anterior esté entendida y funcionando.
+- **Boilerplate vs. lógica de la app** (acordado el 2026-08-04): la infraestructura (`lib/prisma.ts`, config)
+  se le pasa por el chat con explicación línea por línea y no se espera que la escriba de memoria; la lógica
+  (queries, `.map()`, formularios, CRUD) sí la escribe él. Ver el detalle en los conceptos de la fase 4.
 
 ## Decisiones tomadas
 
@@ -29,25 +50,101 @@ auth JWT+bcrypt).
 2. **Modelo de datos con Prisma** ✅ DONE (2026-08-02) — ver detalle en "Estado de la fase 2" abajo
 3. **Landing pública (Server Components, layout)** ✅ DONE (2026-08-04) — Navbar, Footer, Hero (carrusel),
    sección "Nosotros" y sección "Especialidades" (primer `.map()` del proyecto). Landing completa.
-4. **Carta** — productos agrupados por categoría, leídos directo desde Prisma (sin API intermedia)
-   ⬅️ ACÁ RETOMAR. Es donde Prisma entra al código por primera vez: el mismo `.map()` de Especialidades
-   pero con datos de la base en vez de un array hardcodeado.
-5. Formulario de pedido público — Client Component + Server Actions (reemplaza la cadena de 3 fetches con
-   axios del original: crear cliente → crear pedido → agregar detalle)
-6. Login/Auth — JWT en cookie httpOnly + middleware de Next.js para proteger rutas (mejora vs. localStorage
-   del original)
-7. Dashboard: CRUD de categorías (primer CRUD completo, sienta el patrón)
-8. Repetir el patrón CRUD para productos, clientes, pedidos, usuarios
+4. **Carta** ✅ DONE (2026-08-04) — `/carta` con productos agrupados por categoría, leídos directo desde
+   Prisma con `.map()` anidado. Ver detalle en "Estado de la fase 4" abajo.
+5. **Formulario de pedido público** — Client Component + Server Actions (reemplaza la cadena de 3 fetches con
+   axios del original: crear cliente → crear pedido → agregar detalle) ⬅️ ACÁ RETOMAR.
+   ⚠️ Ojo con el `Decimal` de `precio`: no se puede pasar de un Server Component a un Client Component
+   (`"Only plain objects can be passed to Client Components"`). Ya se le anticipó que va a aparecer.
+6. **Login/Auth** — JWT en cookie httpOnly + middleware de Next.js para proteger rutas (mejora vs.
+   localStorage del original). **Alta prioridad**: es literalmente la Fase 1 de LANCER ("login básico y
+   roles: dueño ve todo, vendedor ve lo suyo").
+7. **Dashboard: CRUD de categorías** — el patrón completo (leer, crear, editar, borrar, revalidar).
+   **Última fase con contenido nuevo.**
+8. ~~Repetir el patrón CRUD para productos, clientes, pedidos, usuarios~~ ❌ **SE SALTEA** (decidido el
+   2026-08-04). Cero conceptos nuevos: es el mismo patrón de la fase 7 cuatro veces. Con el objetivo real
+   (aprender el flujo, no terminar la sangucheria) es tiempo perdido. **Al terminar la fase 7 se salta a
+   LANCER.**
+9. **NUEVO — ejercicio de `<Suspense>` + streaming** (agregado el 2026-08-04, no estaba en el roadmap
+   original). ~30 min, se puede hacer en cualquier momento a partir de ahora. Motivo: el "streaming de
+   respuestas de IA" es una de las razones por las que el usuario eligió Next para LANCER y es el único
+   concepto central que el roadmap de ElMasRico no cubría. Se practica con algo trivial (una parte de la
+   carta que tarde a propósito).
+
+### Estado del flujo de Next.js (lo que de verdad se está midiendo)
+
+- ✅ **Camino de LECTURA completo**: request → Server Component `async` → Prisma → HTML. Es el que usan la
+  carta de ElMasRico y, en LANCER, el CRM, el panel de métricas y el stock.
+- ❌ **Camino de ESCRITURA**: form del cliente → cruzar al servidor → validar → escribir → reflejar el
+  cambio en pantalla (Server Actions + revalidación). **Es la mitad que falta y la que más pesa para
+  LANCER** (inbox, leads que cambian de etapa, stock que se descuenta). Fases 5 y 7.
+- ❌ **Streaming / Suspense**: fase 9 de arriba.
+
+## LANCER — qué transfiere, qué corregir del plan y qué de-riskear (2026-08-04)
+
+Anotado después de leer el `PLANNING.md` de LANCER, para no perderlo entre sesiones.
+
+### Cosas del `PLANNING.md` de LANCER que ya quedaron desactualizadas
+
+1. **"API routes: cómo se escribe un endpoint de backend dentro de Next.js"** (ítem de la Fase 0 de LANCER).
+   Ese ítem se escribió antes de saber que existen Server Components y Server Actions. **Para su propia app
+   no necesita endpoints**: leer con Server Components, escribir con Server Actions. Eso hace LANCER más
+   simple de lo estimado (el CRM, el panel financiero y el stock son todos así).
+   - **Pero el ítem se queda por otro motivo**: los **webhooks de WhatsApp/Instagram/Facebook** sí necesitan
+     Route Handlers, porque Meta tiene que poder hacerle `POST` a una URL. Es el caso de manual de "alguien
+     externo le habla a tu servidor". Van a ser ~3 archivos en todo LANCER, no la forma de escribir el
+     backend. Convención: `route.ts`, y **no puede convivir con un `page.tsx` en la misma carpeta** (de ahí
+     que se metan en `app/api/...`).
+2. **Prisma v7 con Postgres**: instalar **`@prisma/adapter-pg`** desde el día uno (el equivalente del
+   `@prisma/adapter-mariadb` de acá) y la URL en `prisma.config.ts`, no en el schema. Sin adapter el cliente
+   no se conecta a nada. **Cualquier tutorial de v5/v6 que encuentre va a estar mal** — ver la sección
+   "Diferencias de Prisma v7" más abajo, es lo primero que tiene que releer al arrancar LANCER.
+3. **El caché/prerender de Next**: lo más importante que se llevó de la fase 4. En una carta de sangucheria
+   que Next congele el HTML en el build es un detalle; en un **inbox en vivo y un dashboard de métricas**
+   sería catastrófico. Va a necesitar `force-dynamic` en el inbox y `revalidate` largo en reportes.
+
+### El riesgo técnico #1 de LANCER: Socket.io + App Router
+
+Es la única decisión del stack que se pelea con el diseño del framework: Socket.io necesita engancharse a un
+servidor HTTP propio, y `next dev` / `next start` no lo dan de arriba — hace falta un custom server.
+
+Alternativas que conviene evaluar **antes** de comprometerse:
+- **SSE (Server-Sent Events)**: un Route Handler que mantiene la respuesta abierta y empuja mensajes. Nativo
+  de Next, sin custom server. Para un inbox alcanza, porque solo hace falta servidor→cliente, no
+  bidireccional. **Es la que se le recomendó probar primero.**
+- Un servicio externo (Pusher, Ably): elimina el problema a cambio de un costo mensual.
+
+**Recomendación concreta que se le dio: prototipar el tiempo real en la Fase 0 o 1 de LANCER, NO en la 2.**
+El plan lo pone dentro de la Fase 2, después de ~45h de trabajo en el inbox; si ahí descubre que la
+arquitectura no cierra, ya construyó medio módulo sobre una decisión equivocada. Un prototipo pelado ("el
+servidor manda la hora cada 2 segundos y el navegador la muestra") son ~2h y valida o descarta el enfoque
+cuando cambiar todavía es gratis.
+
+### Qué transfiere tal cual
+
+- **MySQL → Postgres es barato**: `provider = "postgresql"` + `@prisma/adapter-pg`. Las queries
+  (`findMany`, `include`, `orderBy`, `where`) **no se tocan**. Buen ejemplo concreto de para qué sirve un ORM.
+- El diseño de schema de la fase 2 de acá es la misma habilidad que modelar leads/conversaciones/mensajes
+  (Fase 1 de LANCER).
+- La fase 6 de acá (auth con cookie httpOnly + middleware) **es** el "login básico y roles" de la Fase 1 de
+  LANCER.
 
 ## Estado actual del proyecto Next.js
 
 Creado con `create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"`
 en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
 
-- `next@16.2.12`, `react@19.2.4`, `tailwindcss@4`
+- `next@16.2.12`, `react@19.2.4`, `tailwindcss@4`, `prisma`/`@prisma/client@7.9.1`,
+  `@prisma/adapter-mariadb@7.9.1`, `mariadb@3.5.3`
 - Git inicializado automáticamente por create-next-app (ver sección "Git / GitHub" abajo para el estado real)
-- Estructura: `src/app/layout.tsx` (layout raíz, con `<Navbar />` y `<Footer />`), `src/app/page.tsx` (home),
-  y `src/components/` con `Navbar.tsx`, `Footer.tsx` y `HeroCarousel.tsx`
+- Estructura al 2026-08-04:
+  - `src/app/layout.tsx` (layout raíz, con `<Navbar />` y `<Footer />`), `src/app/page.tsx` (home)
+  - `src/app/carta/page.tsx` (ruta `/carta`)
+  - `src/components/` con `Navbar.tsx`, `Footer.tsx` y `HeroCarousel.tsx`
+  - `src/lib/prisma.ts` (el singleton del Prisma Client — **el único lugar donde se instancia**)
+  - `src/generated/prisma/` (el cliente generado, gitignoreado)
+- Rutas existentes: `/` y `/carta`. Todavía dan 404 (a propósito): `/pedidos` (fase 5) y `/login` (fase 6),
+  los dos ya linkeados desde el `Navbar`.
 - Servidor de dev probado y funcionando (`npm run dev` → `http://localhost:3000`), se detuvo al cerrar la
   sesión — para retomar: `npm run dev` desde la raíz del proyecto.
 - `npm audit`: 12 vulnerabilidades "high" en dependencias transitivas del scaffold — no bloqueante para
@@ -60,6 +157,8 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
   `edcac46` ("matamos el footer"), `18e98cc` ("hicimo el hero"), `0a478a9` ("hicimos la seccion de
   nosotros"), `1e8a865` ("lista la fase 3" — Especialidades en `page.tsx` + los 4 dominios de
   `next.config.ts`).
+- `89b2f83` ("fase 4 cerrada") — `src/lib/prisma.ts`, `src/app/carta/`, el driver adapter en
+  `package.json`/`package-lock.json` y el fix del `height={68}` del logo.
 - Al cierre de la sesión del **2026-08-04** lo único sin commitear es este `PROGRESS.md`. El usuario
   commitea y pushea él.
 - Remoto configurado: `origin` → `https://github.com/ramirouehara/el-mas-riko-nextjs.git`. Ya está pusheado
@@ -138,6 +237,13 @@ en `/Users/ramirouehara/Desktop/primer-proyecto-nextjs`.
   CLI de Prisma, que es un proceso de Node aparte que no pasa por Next.
 - **El generator es `prisma-client`** (no `prisma-client-js`) y genera el cliente en
   `src/generated/prisma`, dentro del código fuente, no escondido en `node_modules`.
+- **El import del cliente es `@/generated/prisma/client`**, no `@prisma/client`. Consecuencia directa del
+  punto anterior.
+- **Hace falta un driver adapter, o el cliente no se conecta a nada.** El query engine de Rust ya no existe
+  en v7. Para MySQL: `npm install @prisma/adapter-mariadb mariadb`, y el `PrismaClient` se construye con
+  `new PrismaClient({ adapter })`. Descubierto y resuelto en la fase 4 — ver el detalle completo en "Estado
+  de la fase 4" más abajo. **Es la diferencia más grande de todas y la que hace inservible a cualquier
+  tutorial de v5/v6.**
 
 ### Dónde retomar (fase 2, ya cerrada)
 
@@ -298,6 +404,88 @@ estar prendido.
   ✅ Resuelto solo: la sección "Nosotros" ahora sí usa `<Image>`.
 - El `<h5>CONTACTO</h5>` del footer se ve igual que un párrafo: el reset de Tailwind (Preflight) le saca
   tamaño y negrita a todos los headings. Si se lo quiere destacar, va con clases explícitas.
+- ~~El logo tira el warning `Image with src "/img/logo.png" has either width or height modified, but not the
+  other`.~~ ✅ Resuelto el 2026-08-04. Causa real: se declaraba `width={140} height={60}` (ratio 2.333)
+  pero el archivo es **318×155** (ratio 2.052), y el Preflight de Tailwind aplica `height: auto` a todas las
+  imágenes (`node_modules/tailwindcss/preflight.css:233`) → el navegador respetaba el width y calculaba el
+  alto real en 68px, Next detectaba la discrepancia y avisaba. Fix: `height={68}` en `Navbar.tsx:9` y
+  `Footer.tsx:11`. **Lección general: `width`/`height` de `next/image` tienen que respetar la proporción real
+  del archivo, no ser el tamaño deseado** (eso lo maneja el CSS).
+- **Las especialidades de la home están desincronizadas de la base.** La home (hardcodeada) muestra
+  Sanguches, Minutas, Empanadas, Pizzas, Bebidas; la base tiene Sanguches, Minutas, Pizzas y
+  **Hamburguesas** (no tiene Empanadas ni Bebidas). Es exactamente el problema que la carta ya no tiene.
+  Candidato natural a arreglar más adelante leyendo las categorías de Prisma también en la home — pero
+  faltaría una columna de imagen en `Categoria` para las fotos.
+
+## Estado de la fase 4 (Carta) — CERRADA al 2026-08-04
+
+### Hecho
+
+- **`npm install @prisma/adapter-mariadb mariadb`** — ⚠️ **el gotcha más grande de Prisma v7 hasta ahora.**
+  En v6 Prisma traía su propio *query engine* (un binario de Rust que hablaba con MySQL directo). En v7 ese
+  binario **ya no existe**: Prisma usa un driver de Node normal y el *driver adapter* es el traductor entre
+  los dos. Sin esto el cliente no se conecta a nada. Ningún tutorial de Google lo menciona.
+  - **Dice `mariadb` aunque la base sea MySQL** y está bien: MariaDB es un fork y hablan el mismo protocolo,
+    Prisma tiene un solo adapter para los dos. Hubo que aclarárselo explícitamente.
+  - Son **dos** paquetes con roles distintos: `mariadb` es el driver (abre el socket, habla el protocolo),
+    `@prisma/adapter-mariadb` es el puente Prisma↔driver. Van en `dependencies`, no en dev.
+  - Tabla de adapters por provider: `.agents/skills/prisma-upgrade-v7/references/driver-adapters.md:20`.
+- **`src/lib/prisma.ts`** — el singleton. Escrito por el usuario (copiado con explicación línea por línea;
+  se acordó explícitamente que **esto es boilerplate y no hace falta poder escribirlo de memoria**, a
+  diferencia de la lógica de la app). Contenido final:
+  ```ts
+  import { PrismaClient } from "@/generated/prisma/client";
+  import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+  const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+  const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+  export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+  if (process.env.NODE_ENV !== "production") { globalForPrisma.prisma = prisma; }
+  ```
+  - **`PrismaMariaDb` acepta un connection string directo** (no solo el objeto `{host, port, user...}` que
+    muestra la doc) y encima reescribe `mysql:` → `mariadb:` solo — verificado en el código del adapter,
+    `node_modules/@prisma/adapter-mariadb/dist/index.mjs:422` y `:488`. Por eso alcanza con reusar
+    `process.env.DATABASE_URL` y no hubo que agregar variables nuevas al `.env`.
+  - El import es `@/generated/prisma/client` (verificado en `src/generated/prisma/client.ts:40`), **no**
+    `@prisma/client` como dicen todos los tutoriales — en v7 el cliente se genera dentro del código fuente.
+- **`src/app/carta/page.tsx`** — ruta `/carta`, Server Component `async`. Query final:
+  ```ts
+  const categorias = await prisma.categoria.findMany({
+    orderBy: { nombre: "asc" },
+    include: { productos: true },
+  });
+  ```
+  JSX: container (`max-w-3xl mx-auto px-4 py-16`) → `<h1 className="text-4xl font-bold text-center mb-12">`
+  → `.map()` de categorías → `<div key={c.id} className="mb-10">` con
+  `<h2 className="text-2xl font-bold border-b pb-2 mb-4">` + `<ul className="space-y-2">` →
+  `.map()` anidado de `c.productos` → `<li key={p.id} className="flex justify-between">` con
+  `<span>{p.nombre}</span>` y `<span className="font-semibold whitespace-nowrap"> ${p.precio.toString()}</span>`.
+  - Se usó `max-w-3xl` (no `6xl` como el resto) **a propósito**: es texto en líneas cortas, con 6xl el
+    nombre y el precio quedaban a 1100px de distancia.
+  - Método: se repitieron los sub-pasos que funcionaron en Especialidades — (5a) `.map()` de afuera con solo
+    los `<h2>`, (5b) el `.map()` anidado de productos, (5c) las clases. Antes de todo eso, un paso previo
+    muy útil: volcar los datos crudos con `<pre>{JSON.stringify(categorias, null, 2)}</pre>` para ver qué
+    llegó realmente **antes** de maquetar nada.
+  - Errores: **una coma faltante** entre `orderBy` y `include` (son propiedades de un objeto). El mensaje
+    del parser esta vez fue bueno (`Expected ',', got 'ident'` con la flechita) — se contrastó con el
+    `Property assignment expected` de la flecha sin `>` para mostrar que hay errores de sintaxis útiles y
+    otros que apuntan a cualquier lado.
+
+### ⚠️ Pendiente inmediato para retomar
+
+1. **`export const dynamic = "force-dynamic"` en `carta/page.tsx`** — se le explicó y **no lo escribió
+   todavía** (verificado: el archivo no tiene ningún export además del default). Ver el punto del prerender
+   en "Conceptos" — sin esto la carta queda congelada en producción.
+2. **`export const metadata = { title: "Carta | El Mas Riko" }`** en `carta/page.tsx` — opcional, ofrecido
+   y no escrito todavía.
+3. Commitear (ver "Git / GitHub"). Después, fase 5.
+
+### Ideas/pendientes para más adelante (no bloquean)
+
+- **Los precios se muestran crudos** (`$12000`, sin separador de miles). Quedaría mejor `$12.000`. Se hace
+  con `Number(p.precio).toLocaleString("es-AR")` o `Intl.NumberFormat` — buen momento para introducirlo
+  cuando aparezca de nuevo en el dashboard.
+- **Categoría sin productos**: hoy no hay ninguna, pero renderizaría un `<h2>` con una `<ul>` vacía debajo.
+  Si aparece, se resuelve con un renderizado condicional (concepto todavía no explicado).
 
 ## Conceptos ya explicados (no repetir de cero, pero se puede refrescar)
 
@@ -542,6 +730,127 @@ Se explicó el 2026-08-03 y se escribió el 2026-08-04. Lo que se le dijo, para 
   Y se le señaló que para renombrar en serio el correcto es **`F2`** (Rename Symbol), que usa TypeScript
   para entender qué es el símbolo y no toca strings ni comentarios que casualmente coincidan.
   También `Option+Shift+F` para formatear el archivo y arreglar la indentación.
+
+### Agregados el 2026-08-04, segunda parte (fase 4: la Carta)
+
+- **Server Component `async` + base de datos directo** — el concepto central de la fase. `export default
+  async function Carta()` con `await prisma....` como primera línea. Se le señaló que esto era **imposible**
+  en su proyecto viejo: ahí necesitaba endpoint de Express + `useEffect` + `axios` + estado de loading. Acá
+  el componente se ejecuta en el servidor, espera los datos y devuelve HTML ya armado. Verificado contra la
+  doc instalada: `node_modules/next/dist/docs/01-app/01-getting-started/06-fetching-data.md` (sección
+  "With an ORM or database").
+- **Routing por carpetas**: carpeta = segmento de URL, y adentro un archivo con **nombre reservado**.
+  `src/app/carta/page.tsx` → `/carta`. La carpeta define la URL, `page.tsx` es el nombre que Next busca
+  (`carta.tsx` o `index.tsx` darían 404). Corolario que le sirvió: un archivo en `src/app/` que no se llame
+  `page.tsx` **no crea ninguna ruta**.
+- **Los layouts se ANIDAN, no se reemplazan.** Preguntó si un `layout.tsx` dentro de `carta/` "mostraría ese
+  children" y usó la expresión "el layout más cercano" — la corrección importante es que aplican **todos**,
+  de afuera hacia adentro: `app/layout.tsx` envuelve a `app/carta/layout.tsx` que envuelve a la página. El
+  navbar y el footer **siguen estando**. Confirmado en
+  `node_modules/next/dist/docs/01-app/01-getting-started/03-layouts-and-pages.md:180`. Caso de uso concreto
+  que se le dio: el sidebar del dashboard en la fase 7/8 (`app/dashboard/layout.tsx`), que además **no se
+  remonta** al navegar entre rutas hermanas. Detalles: solo el layout raíz lleva `<html>`/`<body>`; un
+  `layout.tsx` no es obligatorio (se hereda el de arriba).
+- **Exports con nombre reservado**: `metadata`, `dynamic`, `revalidate`. No se importan ni se llaman — se
+  exportan y Next los busca por nombre en `page.tsx`/`layout.tsx`. El `metadata` de una página pisa el del
+  layout.
+- **`include` = el JOIN, pero el valor está en la FORMA.** Preguntó "¿el include hizo un join?" y la
+  respuesta completa fue: sí conceptualmente, pero un JOIN a mano devuelve una **tabla plana** con la
+  categoría repetida en cada fila, y él necesitaba **4 objetos con un array adentro**. Alguien tiene que
+  hacer esa transformación plano→anidado: en su proyecto viejo con `mysql2` la hacía a mano agrupando por
+  `id_categoria`; Prisma la hace sola. **Eso es la mitad de lo que se paga por usar un ORM.**
+  - Matiz honesto que se le dijo: el SQL real puede ser un JOIN o **dos queries** cosidas en JS, según la
+    versión de la base (el adapter chequea la versión al conectarse). No hace falta adivinar → `log`.
+- **`log: ["query"]`** en el constructor del `PrismaClient` imprime el SQL real en la terminal del servidor
+  (no en la consola del navegador). Se le presentó como la herramienta para auditar un ORM y para cazar el
+  clásico N+1. Lo probó y decidió sacarlo; sabe que está ahí.
+- **`productos: true` vs `productos: { ... }`** dentro de `include`: el `true` es el atajo "traelo y listo";
+  la forma objeto permite configurar (ordenar, filtrar, elegir campos).
+- **Sin `ORDER BY` no hay orden garantizado.** Muy buen caso real: el volcado salió alfabético (Hamburguesas,
+  Minutas, Pizzas, Sanguches) pero los ids eran 10, 8, 9, 7 — o sea no era orden de id ni de creación, la
+  base eligió lo que le convino (probablemente el índice del `@unique` en `nombre`). **Trampa clásica:
+  funciona en tu máquina, parece ordenado, y un día cambia sin que nadie toque nada.** Regla: si el orden
+  importa, pedilo. `orderBy: { nombre: "asc" }`, y en el `include` va otro `orderBy` anidado para el nivel
+  de adentro.
+- **`Decimal` no es un número ni un string** (verificado en `src/generated/prisma/models/Producto.ts:187`:
+  `precio: runtime.Decimal`). Aparece como `"12000"` con comillas en el `JSON.stringify` porque el objeto
+  sabe serializarse a string. El **por qué** que funcionó: los números de JS son floats binarios y
+  `0.1 + 0.2 === 0.30000000000000004`, inaceptable con plata; de ahí el `Decimal @db.Decimal(10,2)` del
+  schema. Tres consecuencias, todas prácticas:
+  1. En JSX hace falta `.toString()` o React tira *"Objects are not valid as a React child"*.
+  2. No se puede hacer `precio * 2` — el `Decimal` tiene `.mul()`, `.plus()`, o se convierte con `Number()`.
+  3. **En la fase 5 va a morder**: no se puede pasar de Server a Client Component
+     (*"Only plain objects can be passed to Client Components"*).
+- **El singleton del Prisma Client y por qué existe.** El hot reload de dev reejecuta los módulos que
+  cambiaron; si el `new PrismaClient()` viviera en la página, cada guardado abriría un **pool de conexiones
+  nuevo** hasta que MySQL corte con `Too many connections`. Precisiones que hizo falta hacerle porque lo
+  resumió como "un bug": (a) **no es un bug de Next ni de Prisma** — el bug sería su código; el hot reload
+  hace lo que debe y no puede adivinar que ese objeto es caro; (b) **solo pasa en desarrollo** (de ahí el
+  `if (NODE_ENV !== "production")`, en prod no hay recargas); (c) el archivo hace **dos** cosas, no una:
+  evitar los clientes duplicados **y** ser el único lugar donde se configura la conexión (cambiar de base
+  = tocar un archivo).
+- **Boilerplate vs. lógica de la app** — meta-lección que preguntó explícitamente ("¿es copiar y pegar y
+  entender qué hace nomás?") y que conviene mantener como criterio de trabajo: el `lib/prisma.ts` es
+  infraestructura, se escribe una vez, está igual en miles de proyectos, y **no tiene valor poder escribirlo
+  de memoria** — alcanza con saber que existe, que es el único lugar donde se instancia, y para qué está el
+  `globalThis` (para reconocer el `Too many connections` cuando aparezca). La lógica de la app (queries,
+  `.map()`, formularios, CRUD) sí tiene que poder escribirla solo. **No todo el código merece el mismo
+  esfuerzo.**
+- **`??` (nullish coalescing)**: "si lo de la izquierda es `null`/`undefined`, usá lo de la derecha". Se
+  distinguió del `||`, que también cae a la derecha con `0` o `""`. Va a reaparecer con los campos
+  opcionales (`Cliente.direccion` es `String?`).
+- **`!` (non-null assertion)** y que **`process.env.CUALQUIERCOSA` siempre es `string | undefined`** para
+  TypeScript. El `!` es "confiá, esto existe", con el costo de que si falta el error aparece en runtime.
+- **`globalThis`**: el objeto global del proceso, existe una sola vez y **no se recrea** con el hot reload —
+  de ahí el truco. El `as unknown as {...}` es un doble casteo necesario porque el tipo de `globalThis` no
+  tiene ninguna propiedad `prisma`.
+- **⚠️ HALLAZGO IMPORTANTE: Next prerenderiza la carta en el build por defecto.** Se le había afirmado que
+  "cambiar un precio se refleja solo" y **eso era falso en producción**; se verificó con `npm run build` y
+  la salida marcó `○ /carta` = *prerendered as static content*. O sea: Next ejecuta la query **durante el
+  build** y congela el HTML. Motivo: Next prerenderiza todo lo que puede y busca señales de que la página
+  necesita el momento de la request (cookies, headers, query params) — **una query a la base no es una de
+  esas señales**. Efecto colateral: la base tiene que estar prendida para poder *buildear*.
+  - Fix aplicable: `export const dynamic = "force-dynamic"` (render en cada request; el build pasa a
+    marcar `ƒ`). Alternativa mejor para una carta real: `export const revalidate = 60` (ISR — estático pero
+    regenerado como máximo cada 60s). **Se recomendó `force-dynamic` por ahora** para que en la fase 7 los
+    cambios del dashboard se vean al instante sin pensar en cachés, y cambiarlo a `revalidate` al final.
+  - Next 16 tiene un modelo nuevo (**Cache Components**, con `use cache` y PPR) pero es **opt-in**:
+    requiere `cacheComponents: true` en `next.config.ts`, que el proyecto no tiene, así que aplica el
+    modelo anterior. Docs: `01-app/01-getting-started/08-caching.md:17` y
+    `01-app/02-guides/caching-without-cache-components.md`.
+- **Nombres impuestos vs. inventados, segunda vuelta** (preguntó por qué `include: { productos: ... }` si la
+  tabla es `productos` y el modelo `Producto`). La respuesta: ese `productos` es el **campo de relación**
+  que él declaró en `model Categoria` (`productos Producto[]`) y **el nombre es libre** — podría ser
+  `items` o `banana`. Lo pluralizó porque el tipo es una lista, no porque la tabla se llame así; que
+  coincida con `@@map("productos")` es **casualidad**. Cadena de tres eslabones que cerró el tema:
+  `c.productos` (campo, nombre suyo) → su tipo `Producto[]` apunta al **modelo** → el modelo tiene
+  `@@map("productos")` que apunta a la **tabla**. El que sabe *cómo* unirlas es el `@relation` del lado de
+  `Producto`, donde vive la FK. **Regla que se le dio: si dudás si un nombre lo elegiste vos, buscá dónde
+  está declarado** — si está en tu schema o en tu objeto es tuyo; si viene de una librería (`findMany`,
+  `include`, `src`, `alt`, `key`) es impuesto.
+- **Los tres nombres de una tabla** (`Categoria` el modelo y el tipo TS / `prisma.categoria` para queries /
+  `categorias` la tabla real vía `@@map`). Que el cliente baje **solo la primera letra** (`DetallePedido` →
+  `prisma.detallePedido`) es una **convención del generador de Prisma**, no una regla de JS: sigue la
+  convención de TS de PascalCase para tipos y camelCase para propiedades, y por eso los dos nombres
+  coexisten. El plural está en el `findMany`, no en el modelo.
+- **En un proyecto nuevo no hacen falta `@map`/`@@map`.** Preguntó si conviene nombrar las tablas igual para
+  evitar el "quilombo". Sí: si la base la crea Prisma con `migrate`, los nombres coinciden porque Prisma los
+  eligió. Los `@map` de este proyecto existen porque la base **ya existía** con convenciones de SQL
+  (plural, snake_case) — y eso fue una **ventaja**: pudo apuntar a la base con los datos ya cargados sin
+  migrar nada, que es el caso normal en el mundo real. Matiz: hay equipos que ponen `@@map` a propósito aun
+  empezando de cero, porque la base la consumen también humanos por phpMyAdmin y reportes SQL a mano.
+- **El `$` antes de las llaves en JSX es texto literal**, no interpolación de template string (esas van con
+  backticks). `<span>${p.precio.toString()}</span>` renderiza `$12000`.
+- **`<ul>`/`<li>` en vez de `<div>`** para una lista: más semántico, los lectores de pantalla la anuncian
+  como lista. El Preflight de Tailwind le saca los puntitos y la sangría, así que visualmente no molesta.
+- **Volcar los datos crudos antes de maquetar**: `<pre>{JSON.stringify(datos, null, 2)}</pre>`. El `<pre>`
+  respeta saltos de línea y espacios; el `2` del `stringify` es la indentación. Es la forma más rápida de
+  responder "¿qué tengo realmente acá?" antes de escribir JSX.
+- **Ancho máximo según el contenido**: `max-w-3xl` para listas de texto vs `max-w-6xl` para secciones con
+  fotos. Con 6xl, el nombre del producto y su precio quedaban separados por 1100px de nada.
+- **`justify-between` reutilizado**: el mismo de la `<nav>` (logo vs links) resuelve el `<li>` de la carta
+  (nombre a la izquierda, precio a la derecha). Y `whitespace-nowrap` para que un precio no se parta.
+- **Multi-cursor / `F2`**: ver el detalle en los conceptos de Especialidades, más arriba.
 
 ## Esquema de datos original (referencia para el Prisma schema)
 

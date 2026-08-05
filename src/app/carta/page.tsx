@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = "force-dynamic";
+
 export default async function Carta (){
     const categorias = await prisma.categoria.findMany({
         orderBy: { nombre: "asc" },
