@@ -1,7 +1,8 @@
 "use server"
 import { prisma } from "@/lib/prisma";
+type Estado = { mensaje: string }
 
-export async function crearPedido(formData: FormData) {
+export async function crearPedido(estadoPrevio: Estado, formData: FormData): Promise<Estado> {
     
     
     const nombre = String(formData.get("nombre"));
@@ -13,33 +14,43 @@ export async function crearPedido(formData: FormData) {
     const producto = await prisma.producto.findUnique({ where: { id: productoId } });
 
     if(!producto) {
-        throw new Error("Producto no encontrado");
+        return {
+            mensaje: "Producto no encontrado"
+        }
     }
 
     const precio = Number(producto.precio);
     const total = precio * cantidad;
 
-    const cliente = await prisma.cliente.create({
-    data: { 
-        nombre: nombre, 
-        telefono: telefono, 
-        direccion: direccion 
-    },
-    });
 
-    const pedido = await prisma.pedido.create({
+    await prisma.$transaction(async (tx)=>{
+        
+        const cliente = await tx.cliente.create({
         data: { 
-            clienteId: cliente.id, 
-            total: total 
+            nombre: nombre, 
+            telefono: telefono, 
+            direccion: direccion 
         },
-    });
+        });
+    
+        const pedido = await tx.pedido.create({
+            data: { 
+                clienteId: cliente.id, 
+                total: total 
+            },
+        });
+    
+        await tx.detallePedido.create({
+            data: { 
+                pedidoId: pedido.id, 
+                productoId: productoId, 
+                cantidad: cantidad, 
+                precioUnitario: precio
+             },
+        });
 
-    await prisma.detallePedido.create({
-        data: { 
-            pedidoId: pedido.id, 
-            productoId: productoId, 
-            cantidad: cantidad, 
-            precioUnitario: precio
-         },
-    });
+    })
+    return { mensaje: "Pedido Creado!" }
+    
+
 };
